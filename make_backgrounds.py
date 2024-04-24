@@ -7,6 +7,8 @@
 
 All-in-one script for iterative generation of backgrounds and segmentation maps!
 
+Before background estimation and source detection, the input images are smoothed with a Gaussian kernel, with the FWHM set to the typical FUV seeing (1.5").
+
 First we estimate a very coarse estimate of the background with an 2400 x 2400 pixel mesh (the enormous mesh is to ensure the mean background is dominated by background pixels and not (extended) sources. The high number of zero-value pixels means that the typical median background value is not helpful (spoiler: it's zero).
 
 Then a first past at source detection is completed, selecting all pixels 0.5 sig above the initial background estimate. This is pretty generous since at this point the estimated background level is most likely over-estimated so there is less distinction between the background and sources. Some adjustments to the chosen sigma value were made for the <500sec exposures and other cases that weren't working out well.
@@ -45,6 +47,11 @@ from photutils.utils import circular_footprint
 
 import matplotlib.pyplot as plt
 import glob, os
+
+field, vccs = np.genfromtxt('uvit_header_info.dat', usecols=(0, 4), dtype=str, unpack=True)
+fieldmatch = {}
+for i,vcc in enumerate(vccs):
+	fieldmatch[vcc] = field[i]
 
 pixels = 14*60./0.417 # number of pixels in 14' given pixel scale
 mask = astroimtools.circular_footprint(pixels)
@@ -100,7 +107,7 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			new_mask = np.where(mask == 0, 0, 1)
 
 			bkg = Background2D(data, (800,800), filter_size=(5, 5), mask=new_mask, coverage_mask=coverage_mask, sigma_clip=None, fill_value=0, bkg_estimator=bkg_estimator, exclude_percentile=75.0)
-			#print(bkg.background_median, bkg.background_rms_median)
+			# print(bkg.background_median, bkg.background_rms_median)
 
 			if image[0].header['RDCDTIME'] < 500.:
 				threshold = bkg.background + (bestthresh * bkg.background_rms)
@@ -120,34 +127,29 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			segm_detect = detect_sources(convolved_data, threshold, npixels=10)
 			segm_deblend = deblend_sources(convolved_data, segm_detect, npixels=10, nlevels=32, contrast=0.005)
 
-
 			maskedblur = np.where(segm_deblend.data == 0, convolved_data, 0)
 			fig = plt.figure(figsize=(8, 8))
 			ax = plt.subplot(projection=imwcs)
 			plt.imshow(maskedblur, origin='lower', cmap='gist_gray', norm=simple_norm(maskedblur, 'sqrt', percent=99.))
-			if 'A08' in filename:
-				plt.savefig('A08_003/%s_masked_bkg2.pdf' % obj)
-			else:
-				plt.savefig('A10_071/%s_masked_bkg2.pdf' % obj)
-			plt.clf()
+			plt.savefig('Diagnostics/%s_masked_bkg.pdf' % fieldmatch[obj])
+			plt.close(fig)
 
 			# Save background map and rms image
 			bkg_hdu = fits.PrimaryHDU(bkg.background, header=imwcs.to_header())
 			rms_hdu = fits.PrimaryHDU(bkg.background_rms, header=imwcs.to_header())
 
-			if 'A08' in filename:
-				bkg_hdu.writeto('A08_003/UVIT_%s_bkg_new.fits' % obj, overwrite=True)
-				rms_hdu.writeto('A08_003/UVIT_%s_bkg_rms_new.fits' % obj, overwrite=True)
-			else:
-				bkg_hdu.writeto('A10_071/UVIT_%s_bkg_new.fits' % obj, overwrite=True)
-				rms_hdu.writeto('A10_071/UVIT_%s_bkg_rms_new.fits' % obj, overwrite=True)
+			# save science image
+			sci_img = data - bkg.background
+			sci_hdu = fits.PrimaryHDU(sci_img, header=image[0].header)
+			sci_hdu.writeto('science_imgs/%s_sci.fits' % fieldmatch[obj], overwrite=True)
+
+			# Save background map and rms image
+			rms_hdu.writeto('science_imgs/%s_rms.fits' % fieldmatch[obj], overwrite=True)
+			bkg_hdu.writeto('science_imgs/%s_bkg.fits' % fieldmatch[obj], overwrite=True)
 
 			# Save segmentation map of detected objects
 			segm_hdu = fits.PrimaryHDU(segm_deblend.data.astype(np.uint32), header=imwcs.to_header())
-			if 'A08' in filename:
-				segm_hdu.writeto('A08_003/UVIT_%s_segmap_new.fits' % obj, overwrite=True)
-			else:
-				segm_hdu.writeto('A10_071/UVIT_%s_segmap_new.fits' % obj, overwrite=True)
+			segm_hdu.writeto('science_imgs/%s_segmap.fits' % fieldmatch[obj], overwrite=True)
 
 			bkg_psf = Background2D(data, (32,32), filter_size=(5, 5), coverage_mask=coverage_mask, sigma_clip=None, fill_value=0, bkg_estimator=bkg_estimator, exclude_percentile=50.0)
 			# print(bkg_psf.background_median, bkg_psf.background_rms_median)
@@ -161,29 +163,19 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			fig = plt.figure(figsize=(8, 8))
 			ax = plt.subplot(projection=imwcs)
 			plt.imshow(maskedblur, origin='lower', cmap='gist_gray', norm=simple_norm(maskedblur, 'sqrt', percent=99.))
-			if 'A08' in filename:
-				plt.savefig('A08_003/%s_masked_bkg2_psf.pdf' % obj)
-			else:
-				plt.savefig('A10_071/%s_masked_bkg2_psf.pdf' % obj)
-			plt.clf()
+			plt.savefig('Diagnostics/%s_masked_bkg_psf.pdf' % fieldmatch[obj])
+			plt.close(fig)
 
 			# Save background map and rms image
 			bkg_hdu = fits.PrimaryHDU(bkg_psf.background, header=imwcs.to_header())
 			rms_hdu = fits.PrimaryHDU(bkg_psf.background_rms, header=imwcs.to_header())
 
-			if 'A08' in filename:
-				bkg_hdu.writeto('A08_003/UVIT_%s_bkg_psf_new.fits' % obj, overwrite=True)
-				rms_hdu.writeto('A08_003/UVIT_%s_bkg_psf_rms_new.fits' % obj, overwrite=True)
-			else:
-				bkg_hdu.writeto('A10_071/UVIT_%s_bkg_psf_new.fits' % obj, overwrite=True)
-				rms_hdu.writeto('A10_071/UVIT_%s_bkg_psf_rms_new.fits' % obj, overwrite=True)
+			bkg_hdu.writeto('science_imgs/%s_bkg_psf.fits' % fieldmatch[obj], overwrite=True)
+			rms_hdu.writeto('science_imgs/%s_rms_psf.fits' % fieldmatch[obj], overwrite=True)
 
 			# Save segmentation map of detected objects
 			segm_hdu = fits.PrimaryHDU(segm_deblend.data.astype(np.uint32), header=imwcs.to_header())
-			if 'A08' in filename:
-				segm_hdu.writeto('A08_003/UVIT_%s_segmap_psf_new.fits' % obj, overwrite=True)
-			else:
-				segm_hdu.writeto('A10_071/UVIT_%s_segmap_psf_new.fits' % obj, overwrite=True)
+			segm_hdu.writeto('science_imgs/%s_segmap_psf.fits' % fieldmatch[obj], overwrite=True)
 
 
 
