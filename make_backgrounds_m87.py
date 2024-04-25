@@ -65,6 +65,8 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/M87/*MASTER.fits', recu
 
 	data = image[0].data * foot
 	data = np.pad(data, (newpad, newpad), mode='constant', constant_values=0)
+	image[0].header['CRPIX1'] = image[0].header['CRPIX1'] + newpad
+	image[0].header['CRPIX2'] = image[0].header['CRPIX2'] + newpad
 	imwcs = wcs.WCS(image[0].header, image)
 	obj = image[0].header['OBJECT']
 	filt = image[0].header['DETECTOR']
