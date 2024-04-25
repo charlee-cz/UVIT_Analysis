@@ -71,7 +71,7 @@ radius = 1. / 0.417 # 1" radius in pixels
 Npix = (radius**2 * np.pi)**0.5 # area of 1" aperture in pixels to get number of pixels inside
 
 # get various properties of UVIT fields, mainly the central coordinates for each one
-fields, obj, targ, prog = np.genfromtxt('uvit_header_info.dat', usecols=(0, 4, 5, 6), dtype=str, unpack=True)
+fields, exptime, obj, targ, prog = np.genfromtxt('uvit_header_info.dat', usecols=(0, 3, 4, 5, 6), dtype=str, unpack=True)
 xc, yc = np.genfromtxt('uvit_header_info.dat', usecols=(1, 2), unpack=True)
 
 # read in GALEX data and clean it so that we only select GALEX objects with detected FUV magnitudes and good photometry
@@ -159,12 +159,12 @@ for i,field in enumerate(fields):
 
 		if source_flux <= 0.:
 			patch = ellip_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='0.2', linestyle='--', lw=1.5)
-			f.write('%f\t%f\tE\t%.2f\t\t-100.0\t\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (ext_catalog[j].ra.value, ext_catalog[j].dec.value, lim3sig, galex_extended['FUVmag'][j], galex_extended['e_FUVmag'][j], source[0].header['RDCDTIME'], galex_extended['Fexp'][j], bkg_mean, aperture_area))
+			f.write('%f\t%f\tE\t%.2f\t\t-100.0\t\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (ext_catalog[j].ra.value, ext_catalog[j].dec.value, lim3sig, galex_extended['FUVmag'][j], galex_extended['e_FUVmag'][j], exptime[i], galex_extended['Fexp'][j], bkg_mean, aperture_area))
 			ax1.errorbar(galex_extended['FUVmag'][j], 1.8, yerr=np.sqrt(galex_extended['e_FUVmag'][j]**2 + (1.086 * flux_err / source_flux)**2), xerr=galex_extended['e_FUVmag'][j], ecolor='0.8', elinewidth=1, marker='o', mfc='0.2', mec='none', linestyle='none', alpha=0.6)
 
 		else:
 			patch = ellip_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='tab:blue', linestyle='-', lw=1.5)
-			f.write('%f\t%f\tE\t%.2f\t\t%.3f\t\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (ext_catalog[j].ra.value, ext_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, galex_extended['FUVmag'][j], galex_extended['e_FUVmag'][j], source[0].header['RDCDTIME'], galex_extended['Fexp'][j], bkg_mean, aperture_area))
+			f.write('%f\t%f\tE\t%.2f\t\t%.3f\t\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (ext_catalog[j].ra.value, ext_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, galex_extended['FUVmag'][j], galex_extended['e_FUVmag'][j], exptime[i], galex_extended['Fexp'][j], bkg_mean, aperture_area))
 			ax1.errorbar(-2.5 * np.log10(source_flux) + zp, -2.5 * np.log10(source_flux) + zp - galex_extended['FUVmag'][j], yerr=np.sqrt(galex_extended['e_FUVmag'][j]**2 + (1.086 * flux_err / source_flux)**2), xerr=1.086 * flux_err / source_flux, ecolor='0.8', elinewidth=1, marker='o', mfc='tab:blue', mec='none', linestyle='none', alpha=0.6)
 
 	d2d = scalarc.separation(psf_catalog)
@@ -197,12 +197,12 @@ for i,field in enumerate(fields):
 		if source_flux <= 0.:
 			patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='0.2', linestyle='--', lw=0.8)
 			ax1.errorbar(galex_points['FUVmag'][j], 1.8, yerr=np.sqrt(galex_points['e_FUVmag'][j]**2 + (1.086 * flux_err / source_flux)**2), xerr=galex_points['e_FUVmag'][j], ecolor='0.8', elinewidth=1, marker='.', mfc='0.2', mec='none', linestyle='none', alpha=0.6)
-			f.write('%f\t%f\tP\t%.2f\t\t-100.0\t\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (psf_catalog[j].ra.value, psf_catalog[j].dec.value, lim3sig, galex_points['FUVmag'][j], galex_points['e_FUVmag'][j], source[0].header['RDCDTIME'], galex_points['Fexp'][j], bkg_mean, aperture_area))
+			f.write('%f\t%f\tP\t%.2f\t\t-100.0\t\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (psf_catalog[j].ra.value, psf_catalog[j].dec.value, lim3sig, galex_points['FUVmag'][j], galex_points['e_FUVmag'][j], exptime[i], galex_points['Fexp'][j], bkg_mean, aperture_area))
 
 		else:
 			patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='tab:orange', linestyle='-', lw=0.8)
 			ax1.errorbar(-2.5 * np.log10(source_flux) + zp, -2.5 * np.log10(source_flux) + zp - galex_points['FUVmag'][j], yerr=np.sqrt(galex_points['e_FUVmag'][j]**2 + (1.086 * flux_err / source_flux)**2), xerr=1.086 * flux_err / source_flux, ecolor='0.8', elinewidth=1, marker='.', mfc='tab:orange', mec='none', linestyle='none', alpha=0.6)
-			f.write('%f\t%f\tP\t%.2f\t\t%.3f\t\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (psf_catalog[j].ra.value, psf_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, galex_points['FUVmag'][j], galex_points['e_FUVmag'][j], source[0].header['RDCDTIME'], galex_points['Fexp'][j], bkg_mean, aperture_area))
+			f.write('%f\t%f\tP\t%.2f\t\t%.3f\t\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (psf_catalog[j].ra.value, psf_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, galex_points['FUVmag'][j], galex_points['e_FUVmag'][j], exptime[i], galex_points['Fexp'][j], bkg_mean, aperture_area))
 	
 	ax1.set_xlabel('UVIT FUV mag')
 	ax1.set_ylabel('(UVIT - GALEX) FUV mag')
@@ -465,7 +465,7 @@ for i, field in enumerate(field):
 				ax_sky.text(newx, newy+20., names[j], color=colors[j], horizontalalignment='center', verticalalignment='bottom', fontsize=10, fontname='Helvetica', usetex=False)
 				if inner_flux > minflux:
 					print('no galaxy but it has a center')
-					f.write('%f\t%f\t%s\t%.2f\t\t-100.0\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.00\t%.2f\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, flags[j], lim3sig, -2.5 * np.log10(inner_flux) + zp, 1.086 * inner_err / inner_flux, source[0].header['RDCDTIME'], bkg_mean, aperture_area, area_arc, mu3sig))
+					f.write('%f\t%f\t%s\t%.2f\t\t-100.0\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.00\t%.2f\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, flags[j], lim3sig, -2.5 * np.log10(inner_flux) + zp, 1.086 * inner_err / inner_flux, exptime[i], bkg_mean, aperture_area, area_arc, mu3sig))
 
 
 			else:
@@ -474,7 +474,7 @@ for i, field in enumerate(field):
 				patch = ellip_tmp.plot(ax=ax_sky, facecolor='none', edgecolor=colors[j], linestyle='-', lw=1.5)
 				ax_sky.text(newx, newy+20., names[j], color=colors[j], horizontalalignment='center', verticalalignment='bottom', fontsize=10, fontname='Helvetica', usetex=False)
 
-				f.write('%f\t%f\t%s\t%.2f\t\t%.3f\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%e\t%12.2f\t%12.2f\t%.2f\t%.2f\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, flags[j], lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, -2.5 * np.log10(inner_flux) + zp, 1.086 * inner_err / inner_flux, source[0].header['RDCDTIME'], bkg_mean, aperture_area, area_arc, -2.5 * np.log10(source_flux) + zp + 2.5*np.log10(area_arc), mu3sig))
+				f.write('%f\t%f\t%s\t%.2f\t\t%.3f\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%e\t%12.2f\t%12.2f\t%.2f\t%.2f\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, flags[j], lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, -2.5 * np.log10(inner_flux) + zp, 1.086 * inner_err / inner_flux, exptime[i], bkg_mean, aperture_area, area_arc, -2.5 * np.log10(source_flux) + zp + 2.5*np.log10(area_arc), mu3sig))
 
 		else:
 			# either a UCD or GC, so just do a circular aperture
@@ -520,13 +520,13 @@ for i, field in enumerate(field):
 					ngcs_sub+=1
 					ngcs+=1
 					patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='gold', linestyle='-', lw=0.8)
-					f.write('%f\t%f\tGC\t%.2f\t\t%.3f\t%.3f\t-100.0\t\t-100.0\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.0\t-100.0\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, source[0].header['RDCDTIME'], bkg_mean, aperture_area, area_arc))
+					f.write('%f\t%f\tGC\t%.2f\t\t%.3f\t%.3f\t-100.0\t\t-100.0\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.0\t-100.0\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, exptime[i], bkg_mean, aperture_area, area_arc))
 
 				else:
 					nucds_sub+=1
 					nucds+=1
 					patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='magenta', linestyle='-', lw=0.8)
-					f.write('%f\t%f\tUCD\t%.2f\t\t%.3f\t%.3f\t-100.0\t\t-100.0\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.0\t-100.0\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, source[0].header['RDCDTIME'], bkg_mean, aperture_area, area_arc))
+					f.write('%f\t%f\tUCD\t%.2f\t\t%.3f\t%.3f\t-100.0\t\t-100.0\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.0\t-100.0\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, exptime[i], bkg_mean, aperture_area, area_arc))
 	fig_sky.tight_layout()
 	ax_sky.set_xlabel('Right Ascension (J2000)')
 	ax_sky.set_ylabel('Declination (J2000)')
