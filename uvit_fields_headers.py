@@ -60,7 +60,7 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 
 with fits.open('/Users/sargas/Documents/UVIT/M87/M87_FUV_F2___MASTER.fits') as hdul:
 	exptimes = np.append(exptimes, hdul[0].header['TOTITIME'])
-	ids = np.append(ids, hdul[0].header['OBJECT'])
+	ids = np.append(ids, 'VCC1316')
 	targnames = np.append(targnames, hdul[0].header['TARGETID'])
 	w = WCS(hdul[0].header)
 	sky = w.pixel_to_world(2048, 2048)
