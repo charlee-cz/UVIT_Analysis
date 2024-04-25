@@ -339,7 +339,7 @@ ngvs_catalog = SkyCoord(ra=xs * u.degree, dec=ys * u.degree, frame='fk5')
 ff = open('ngvs_total_matches.dat', 'w')
 ff.write('#UVIT field\tMain obj.\tTot_gal\tN_det\tTot_UCD\tN_det\tTot_gc\tN_det\n')
 
-for i, field in enumerate(field):
+for i, field in enumerate(fields):
 	ngals = 0
 	nucds = 0
 	ngcs = 0
