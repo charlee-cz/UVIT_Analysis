@@ -537,6 +537,6 @@ for i, field in enumerate(fields):
 	plt.close(fig_sky)
 	bkgimg.close()
 	bkgrms.close()
-	ff.write('%s\t\t%s\t\t%d\t%d\t%d\t%d\t%d\t%d\n' % (field[i], obj[i], ngals, ngals_sub, nucds, nucds_sub, ngcs, ngcs_sub))
+	ff.write('%s\t\t%s\t\t%d\t%d\t%d\t%d\t%d\t%d\n' % (field, obj[i], ngals, ngals_sub, nucds, nucds_sub, ngcs, ngcs_sub))
 ff.close()
 
