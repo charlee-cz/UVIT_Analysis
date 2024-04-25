@@ -72,6 +72,7 @@ Npix = (radius**2 * np.pi)**0.5 # area of 1" aperture in pixels to get number of
 
 # get various properties of UVIT fields, mainly the central coordinates for each one
 fields, exptime, obj, targ, prog = np.genfromtxt('uvit_header_info.dat', usecols=(0, 3, 4, 5, 6), dtype=str, unpack=True)
+exptime = exptime.astype(float)
 xc, yc = np.genfromtxt('uvit_header_info.dat', usecols=(1, 2), unpack=True)
 
 # read in GALEX data and clean it so that we only select GALEX objects with detected FUV magnitudes and good photometry
