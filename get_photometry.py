@@ -122,12 +122,12 @@ for i,field in enumerate(fields):
 	catalogmsk = d2d < 13.*u.arcmin
 	idxcatalog = np.where(catalogmsk)[0]
 
-	fig1 = plt.figure(1, figsize=(5.25, 3.25))
+	fig1 = plt.figure(1, figsize=(3.35, 2.5))
 	ax1 = plt.subplot()
 
-	fig_sky = plt.figure(2, figsize=(7.25, 7.25))
+	fig_sky = plt.figure(2, figsize=(7.1, 6.9))
 	ax_sky = plt.subplot(projection=imwcs)
-	ax_sky.imshow(np.ma.array(convolved_data, mask=(foot == 0)), origin='lower', cmap='gist_gray_r', interpolation='nearest', norm=simple_norm(np.ma.array(convolved_data, mask=(foot == 0)), 'log', log_a=1000., min_cut=-4e-6, max_cut=0.001))
+	ax_sky.imshow(np.ma.array(convolved_data, mask=(foot == 0)), origin='lower', cmap='gist_gray_r', interpolation='nearest', norm=simple_norm(np.ma.array(convolved_data, mask=(foot == 0)), 'asinh', min_cut=0., max_cut=0.0002))
 
 	f = open('GALEXphotometry/%s_galex_match.dat' % field, 'w')
 	f.write('#RA\t\tDec\t\tSource\tUVIT_lim\tFUVmag_UVIT\terr\tFUVmag_GALEX\terr\tUVIT t_exp\tGALEX t_exp\tAvg bkg\t\tArea\n')
@@ -205,14 +205,17 @@ for i,field in enumerate(fields):
 			ax1.errorbar(-2.5 * np.log10(source_flux) + zp, -2.5 * np.log10(source_flux) + zp - galex_points['FUVmag'][j], yerr=np.sqrt(galex_points['e_FUVmag'][j]**2 + (1.086 * flux_err / source_flux)**2), xerr=1.086 * flux_err / source_flux, ecolor='0.8', elinewidth=1, marker='.', mfc='tab:orange', mec='none', linestyle='none', alpha=0.6)
 			f.write('%f\t%f\tP\t%.2f\t\t%.3f\t\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%.1f\t\t%e\t%.2f\n' % (psf_catalog[j].ra.value, psf_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, galex_points['FUVmag'][j], galex_points['e_FUVmag'][j], exptime[i], galex_points['Fexp'][j], bkg_mean, aperture_area))
 	
-	ax1.set_xlabel('UVIT FUV mag')
-	ax1.set_ylabel('(UVIT - GALEX) FUV mag')
+	circ = CircleSkyRegion(scalarc, 13.0 * u.arcmin)
+	circ_tmp = circ.to_pixel(imwcs)
+	patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='0.2', linestyle='--', lw=0.8)
+	ax1.set_xlabel(r'UVIT FUV (mag)')
+	ax1.set_ylabel(r'$\Delta$(FUV) (UVIT - GALEX)')
 	ax1.set_xlim((lim3sig+0.5, -2.5 * np.log10(maxflux) + zp - 0.5))
 	ax1.set_ylim((-3, 3))
 	ax1.plot(np.linspace(-10, 10)*0 + lim3sig, np.linspace(-10, 10), linestyle='--', color='0.2', alpha=0.8)
 	ax1.plot(np.linspace(0, 30), np.linspace(0, 30)*0., linestyle='--', color='0.2', alpha=0.8, zorder=0)
-	fig1.tight_layout()
-	fig_sky.tight_layout()
+	fig1.subplots_adjust(right=0.97, top=0.97, bottom=0.18, left=0.15)
+	fig_sky.subplots_adjust(right=0.99, top=0.99, bottom=0.06, left=0.12)
 	ax_sky.set_xlabel('Right Ascension (J2000)')
 	ax_sky.set_ylabel('Declination (J2000)')
 	ax_sky.invert_yaxis()
@@ -336,6 +339,10 @@ with open('/Users/sargas/Downloads/max/ngvs_ucds.reg') as file:
 '''
 
 ngvs_catalog = SkyCoord(ra=xs * u.degree, dec=ys * u.degree, frame='fk5')
+ngvsids, nicknames = np.genfromtxt('NGVS_Catalogue_extract', usecols=(0,1), dtype=str, unpack=True)
+matchnames = {}
+for i in range(len(ngvsids)):
+	matchnames[ngvsids[i]] = nicknames[i]
 
 #ff = open('ngvs_total_matches.dat', 'w')
 #ff.write('#UVIT field\tMain obj.\tTot_gal\tN_det\tTot_UCD\tN_det\tTot_gc\tN_det\n')
@@ -390,13 +397,9 @@ for i, field in enumerate(fields):
 
 	scalarc = SkyCoord(ra=xc[i]*u.deg, dec=yc[i]*u.deg, frame='icrs')
 
-	fig1 = plt.figure(1, figsize=(5.25, 3.25))
-	ax1 = plt.subplot()
-
-	fig_sky = plt.figure(2, figsize=(7.25, 7.25))
+	fig_sky = plt.figure(2, figsize=(7.1, 6.9))
 	ax_sky = plt.subplot(projection=imwcs)
-	ax_sky.imshow(np.ma.array(convolved_data, mask=(foot == 0)), origin='lower', cmap='gist_gray_r', interpolation='nearest', norm=simple_norm(np.ma.array(convolved_data, mask=(foot == 0)), 'log', log_a=1000., min_cut=-4e-6, max_cut=0.001))
-
+	ax_sky.imshow(np.ma.array(convolved_data, mask=(foot == 0)), origin='lower', cmap='gist_gray_r', interpolation='nearest', norm=simple_norm(np.ma.array(convolved_data, mask=(foot == 0)), 'asinh', min_cut=0., max_cut=0.0002))
 
 	d2d = scalarc.separation(ngvs_catalog)
 	catalogmsk = d2d < 13.*u.arcmin
@@ -465,7 +468,7 @@ for i, field in enumerate(fields):
 			if ((source_flux < minflux) or (len(inidx) < 1)):# or -2.5 * np.log10(source_flux) + zp + 2.5*np.log10(area_arc) > mu3sig):
 				ngals+=1
 				patch = ellip_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='tab:blue', linestyle='--', lw=1.5)
-				ax_sky.text(newx, newy+20., names[j], color='tab:blue', horizontalalignment='center', verticalalignment='bottom', fontsize=10, fontname='Helvetica', usetex=False)
+				ax_sky.text(newx, newy+20., matchnames[names[j]], color='tab:blue', horizontalalignment='center', verticalalignment='bottom', fontsize=10, fontname='Helvetica', usetex=False)
 				if inner_flux > minflux:
 					print('no galaxy but it has a center')
 					f.write('%f\t%f\t%s\t%.2f\t\t-100.0\t-100.0\t%.3f\t\t%.3f\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.00\t%.2f\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, flags[j], lim3sig, -2.5 * np.log10(inner_flux) + zp, 1.086 * inner_err / inner_flux, exptime[i], bkg_mean, aperture_area, area_arc, mu3sig))
@@ -475,7 +478,7 @@ for i, field in enumerate(fields):
 				ngals_sub+=1
 				ngals+=1
 				patch = ellip_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='tab:blue', linestyle='-', lw=1.5)
-				ax_sky.text(newx, newy+20., names[j], color='tab:blue', horizontalalignment='center', verticalalignment='bottom', fontsize=10, fontname='Helvetica', usetex=False)
+				ax_sky.text(newx, newy+20., matchnames[names[j]], color='tab:blue', horizontalalignment='center', verticalalignment='bottom', fontsize=10, fontname='Helvetica', usetex=False)
 
 				f.write('%f\t%f\t%s\t%.2f\t\t%.3f\t%.3f\t%.3f\t\t%.3f\t%.1f\t\t%e\t%12.2f\t%12.2f\t%.2f\t%.2f\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, flags[j], lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, -2.5 * np.log10(inner_flux) + zp, 1.086 * inner_err / inner_flux, exptime[i], bkg_mean, aperture_area, area_arc, -2.5 * np.log10(source_flux) + zp + 2.5*np.log10(area_arc), mu3sig))
 
@@ -522,7 +525,7 @@ for i, field in enumerate(fields):
 				if flags[j] == 'gc':
 					ngcs_sub+=1
 					ngcs+=1
-					patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='tab:orange', linestyle='-', lw=0.8)
+					patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='tab:green', linestyle='-', lw=0.8)
 					f.write('%f\t%f\tGC\t%.2f\t\t%.3f\t%.3f\t-100.0\t\t-100.0\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.0\t-100.0\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, exptime[i], bkg_mean, aperture_area, area_arc))
 
 				else:
@@ -530,7 +533,10 @@ for i, field in enumerate(fields):
 					nucds+=1
 					patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='magenta', linestyle='-', lw=0.8)
 					f.write('%f\t%f\tUCD\t%.2f\t\t%.3f\t%.3f\t-100.0\t\t-100.0\t%.1f\t\t%e\t%12.2f\t%12.2f\t-100.0\t-100.0\n' % (ngvs_catalog[j].ra.value, ngvs_catalog[j].dec.value, lim3sig, -2.5 * np.log10(source_flux) + zp, 1.086 * flux_err / source_flux, exptime[i], bkg_mean, aperture_area, area_arc))
-	fig_sky.tight_layout()
+	circ = CircleSkyRegion(scalarc, 13.0 * u.arcmin)
+	circ_tmp = circ.to_pixel(imwcs)
+	patch = circ_tmp.plot(ax=ax_sky, facecolor='none', edgecolor='0.2', linestyle='--', lw=0.8)
+	fig_sky.subplots_adjust(right=0.99, top=0.99, bottom=0.06, left=0.12)
 	ax_sky.set_xlabel('Right Ascension (J2000)')
 	ax_sky.set_ylabel('Declination (J2000)')
 	ax_sky.invert_yaxis()
