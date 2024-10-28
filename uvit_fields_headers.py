@@ -34,18 +34,33 @@ ras = []
 decs = []
 prog = []
 
-for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=True):
+root = "/home/clee/dev/astrosat/UVIT_Analysis/"
+data_root = root + "data/"
+
+skip = ["NGC4388_FUV_BaF2___MASTER.fits",
+		"IC3418_FUV_BaF2___MASTER.fits"
+		]
+
+for fullpath in glob.iglob(data_root + 'A*/**/*.fits', recursive=True):
 	filename = os.path.basename(fullpath)
+	if filename in skip:
+		continue
+	if "Archival" in fullpath:
+		continue
+
 	# only work on the image files
 	if 'EXPARRAY' not in filename:
 		# ingore sextractor images
 		if 'BaF2' in filename:
 			with fits.open(fullpath) as hdul:
-				exptimes = np.append(exptimes, hdul[0].header['RDCDTIME'])
-				ids = np.append(ids, hdul[0].header['OBJECT'])
-				targnames = np.append(targnames, hdul[0].header['TARGETID'])
-				tmpra = hdul[0].header['CCVALD1']
-				tmpdec = hdul[0].header['CCVALD2']
+				try:
+					exptimes = np.append(exptimes, hdul[0].header['RDCDTIME'])
+					ids = np.append(ids, hdul[0].header['OBJECT'])
+					targnames = np.append(targnames, hdul[0].header['TARGETID'])
+					tmpra = hdul[0].header['CCVALD1']
+					tmpdec = hdul[0].header['CCVALD2']
+				except KeyError as e:
+					raise Exception(f"KeyError: {e} in {filename}")
 				if tmpra == 0:
 					w = WCS(hdul[0].header)
 					sky = w.pixel_to_world(2400, 2400)
@@ -58,19 +73,25 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			else:
 				prog = np.append(prog, 'A10_071')
 
-with fits.open('/Users/sargas/Documents/UVIT/M87/M87_FUV_F2___MASTER.fits') as hdul:
-	exptimes = np.append(exptimes, hdul[0].header['TOTITIME'])
-	ids = np.append(ids, 'VCC1316')
-	targnames = np.append(targnames, hdul[0].header['TARGETID'])
-	w = WCS(hdul[0].header)
-	sky = w.pixel_to_world(2048, 2048)
-	tmpra = sky.ra.degree
-	tmpdec = sky.dec.degree
-	ras = np.append(ras, tmpra)
-	decs = np.append(decs, tmpdec)
-	prog = np.append(prog, 'M87')
+## NOTE: initial file had the file name M87_FUV_F2___MASTER.fits
+## Should confirm whether this is the same as just the BaF2 file (should be)
+
+# with fits.open(data_root + 'M87/M87_FUV_BaF2___MASTER.fits') as hdul:
+# 	## NOTE: Failing at this point - no header TOTITIME in the archival file
+# 	exptimes = np.append(exptimes, hdul[0].header['TOTITIME'])
+
+# 	ids = np.append(ids, 'VCC1316')
+# 	targnames = np.append(targnames, hdul[0].header['TARGETID'])
+# 	w = WCS(hdul[0].header)
+# 	sky = w.pixel_to_world(2048, 2048)
+# 	tmpra = sky.ra.degree
+# 	tmpdec = sky.dec.degree
+# 	ras = np.append(ras, tmpra)
+# 	decs = np.append(decs, tmpdec)
+# 	prog = np.append(prog, 'M87')
 
 # sort UVIT fields by RA and Dec for new naming convention
+## NOTE: this is the original sorting with TOTITIME header, commented out for now to allow continued execution
 temp = sorted(zip(ras, decs, ids, targnames, exptimes, prog), key=lambda x: (x[0], -x[1]))
 newras, newdecs, newids, newtargs, newexps, newprog = map(list, zip(*temp))
 
@@ -82,12 +103,12 @@ ax = plt.subplot(projection=imwcs)
 plt.imshow(im[0].data, origin='lower', cmap='gist_gray_r')
 
 # overlay NGVS footprint
-xs, ys = np.genfromtxt('/Users/sargas/Dropbox/Current/Data/footprint_coords.dat', unpack=True)
+xs, ys = np.genfromtxt(root+'footprint_coords.dat', unpack=True)
 poly = Polygon([[xs[i], ys[i]] for i in range(len(xs))])
 plt.plot(xs*u.deg, ys*u.deg, color='0.2', linestyle='-', linewidth=0.8, transform=ax.get_transform('icrs'), zorder=0)
 
 # overlay GALEX pointings from Boselli+ 2011
-xxs, yys, fuv_t = np.genfromtxt('/Users/sargas/Documents/UVIT/galex_virgo_fields.dat', usecols=(1, 2, 4), dtype=str, unpack=True)
+xxs, yys, fuv_t = np.genfromtxt(root+'galex_virgo_fields.dat', usecols=(1, 2, 4), dtype=str, unpack=True)
 fuv_t = fuv_t.astype(float)
 has_fuv = np.where(fuv_t > 0.0)[0]
 
@@ -96,7 +117,6 @@ for i in range(len(xxs[has_fuv])):
 	ytmp = Latitude(yys[has_fuv][i] + ' degrees')
 	c = SphericalCircle((xtmp.degree*u.deg, ytmp.degree*u.deg), 1.2*u.deg, facecolor='tab:orange', edgecolor='none', linewidth=0., transform=ax.get_transform('icrs'), zorder=10, alpha=np.log10(fuv_t[has_fuv][i])/15.)
 	ax.add_patch(c)
-
 
 # plot UVIT pointings and also check which ones fall within NGVS area
 infoot = []

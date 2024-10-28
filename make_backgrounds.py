@@ -72,7 +72,11 @@ kernel.normalize()
 bestthreshes = [0.6, 0.5, 0.8, 1.0, 1.25]
 exps = np.array([500, 4000, 7500, 11000, 20000])
 
-for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=True):
+root = "/home/clee/dev/astrosat/UVIT_Analysis/data/"
+
+result_folder = "/home/clee/dev/astrosat/UVIT_Analysis/results/"
+
+for fullpath in glob.iglob(root + 'A*/**/*.fits', recursive=True):
 	filename = os.path.basename(fullpath)
 	if 'EXPARRAY' not in filename:
 		if 'BaF2' in filename:
@@ -131,7 +135,7 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			fig = plt.figure(figsize=(8, 8))
 			ax = plt.subplot(projection=imwcs)
 			plt.imshow(maskedblur, origin='lower', cmap='gist_gray', norm=simple_norm(maskedblur, 'sqrt', percent=99.))
-			plt.savefig('Diagnostics/%s_masked_bkg.pdf' % fieldmatch[obj])
+			plt.savefig(result_folder + 'diagnostics/%s_masked_bkg.pdf' % fieldmatch[obj])
 			plt.close(fig)
 
 			# Save background map and rms image
@@ -141,15 +145,15 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			# save science image
 			sci_img = data - bkg.background
 			sci_hdu = fits.PrimaryHDU(sci_img, header=image[0].header)
-			sci_hdu.writeto('science_imgs/%s_sci.fits' % fieldmatch[obj], overwrite=True)
+			sci_hdu.writeto(result_folder + 'science_imgs/%s_sci.fits' % fieldmatch[obj], overwrite=True)
 
 			# Save background map and rms image
-			rms_hdu.writeto('science_imgs/%s_rms.fits' % fieldmatch[obj], overwrite=True)
-			bkg_hdu.writeto('science_imgs/%s_bkg.fits' % fieldmatch[obj], overwrite=True)
+			rms_hdu.writeto(result_folder + 'science_imgs/%s_rms.fits' % fieldmatch[obj], overwrite=True)
+			bkg_hdu.writeto(result_folder + 'science_imgs/%s_bkg.fits' % fieldmatch[obj], overwrite=True)
 
 			# Save segmentation map of detected objects
 			segm_hdu = fits.PrimaryHDU(segm_deblend.data.astype(np.uint32), header=imwcs.to_header())
-			segm_hdu.writeto('science_imgs/%s_segmap.fits' % fieldmatch[obj], overwrite=True)
+			segm_hdu.writeto(result_folder + 'science_imgs/%s_segmap.fits' % fieldmatch[obj], overwrite=True)
 
 			bkg_psf = Background2D(data, (32,32), filter_size=(5, 5), coverage_mask=coverage_mask, sigma_clip=None, fill_value=0, bkg_estimator=bkg_estimator, exclude_percentile=50.0)
 			# print(bkg_psf.background_median, bkg_psf.background_rms_median)
@@ -163,19 +167,19 @@ for fullpath in glob.iglob('/Users/sargas/Documents/UVIT/A*/*.fits', recursive=T
 			fig = plt.figure(figsize=(8, 8))
 			ax = plt.subplot(projection=imwcs)
 			plt.imshow(maskedblur, origin='lower', cmap='gist_gray', norm=simple_norm(maskedblur, 'sqrt', percent=99.))
-			plt.savefig('Diagnostics/%s_masked_bkg_psf.pdf' % fieldmatch[obj])
+			plt.savefig(result_folder + 'diagnostics/%s_masked_bkg_psf.pdf' % fieldmatch[obj])
 			plt.close(fig)
 
 			# Save background map and rms image
 			bkg_hdu = fits.PrimaryHDU(bkg_psf.background, header=imwcs.to_header())
 			rms_hdu = fits.PrimaryHDU(bkg_psf.background_rms, header=imwcs.to_header())
 
-			bkg_hdu.writeto('science_imgs/%s_bkg_psf.fits' % fieldmatch[obj], overwrite=True)
-			rms_hdu.writeto('science_imgs/%s_rms_psf.fits' % fieldmatch[obj], overwrite=True)
+			bkg_hdu.writeto(result_folder + 'science_imgs/%s_bkg_psf.fits' % fieldmatch[obj], overwrite=True)
+			rms_hdu.writeto(result_folder + 'science_imgs/%s_rms_psf.fits' % fieldmatch[obj], overwrite=True)
 
 			# Save segmentation map of detected objects
 			segm_hdu = fits.PrimaryHDU(segm_deblend.data.astype(np.uint32), header=imwcs.to_header())
-			segm_hdu.writeto('science_imgs/%s_segmap_psf.fits' % fieldmatch[obj], overwrite=True)
+			segm_hdu.writeto(result_folder + 'science_imgs/%s_segmap_psf.fits' % fieldmatch[obj], overwrite=True)
 
 
 

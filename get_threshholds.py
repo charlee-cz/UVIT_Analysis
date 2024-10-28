@@ -34,6 +34,8 @@ import matplotlib.patches as patches
 from scipy.interpolate import griddata
 import glob, os
 
+from pathlib import Path
+
 #Make a circular mask which excludes everything outside the Astrosat UVIT field of view
 pixels = 14*60./0.417 # number of pixels in 14' given pixel scale
 mask = astroimtools.circular_footprint(pixels)
@@ -53,10 +55,24 @@ kernel.normalize()
 
 exps = [300, 4000, 7500, 11000, 20000]
 
-# '/Users/sargas/Documents/UVIT/A10_071/VCC1588_FUV_BaF2___MASTER_IMAGE_A10_071T66.fits', '/Users/sargas/Documents/UVIT/A10_071/VCC1078_FUV_BaF2___MASTER_IMAGE_A10_071T54.fits', '/Users/sargas/Documents/UVIT/A10_071/VCC792_FUV_BaF2___MASTER_IMAGE_A10_071T12.fits', 
-for j,fullpath in enumerate(['/Users/sargas/Documents/UVIT/A10_071/VCC491_FUV_BaF2___MASTER_IMAGE_A10_071T08.fits', '/Users/sargas/Documents/UVIT/A10_071/VCC1588_FUV_BaF2___MASTER_IMAGE_A10_071T66.fits', '/Users/sargas/Documents/UVIT/A10_071/VCC1078_FUV_BaF2___MASTER_IMAGE_A10_071T54.fits', '/Users/sargas/Documents/UVIT/A10_071/VCC792_FUV_BaF2___MASTER_IMAGE_A10_071T12.fits', '/Users/sargas/Documents/UVIT/A10_071/VCC89_FUV_BaF2___MASTER_EXPARRAY_A10_071T01.fits']):
-	image = fits.open(fullpath)
+root_folder = "~/dev/astrosat/UVIT_Analysis/data/A10_071/"
 
+filenames = [
+	root_folder + "A10_071T08/" + 'VCC491_FUV_BaF2___MASTER_IMAGE_A10_071T08.fits',
+	root_folder + "A10_071T66/" + 'VCC1588_FUV_BaF2___MASTER_IMAGE_A10_071T66.fits',
+	root_folder + "A10_071T54/" + 'VCC1078_FUV_BaF2___MASTER_IMAGE_A10_071T54.fits',
+	root_folder + "A10_071T12/" + 'VCC792_FUV_BaF2___MASTER_IMAGE_A10_071T12.fits',
+	root_folder + "A10_071T01/" + 'VCC89_FUV_BaF2___MASTER_EXPARRAY_A10_071T01.fits'
+]
+
+threshold_folder = Path(root_folder + "thresholds/")
+
+if not threshold_folder.exists():
+	threshold_folder.mkdir(exist_ok=True)
+
+
+for j,fullpath in enumerate(filenames):
+	image = fits.open(fullpath)
 
 	#Rescale to counts per second and zero out anything outside footprint
 	data = image[0].data * foot / image[0].header['RDCDTIME']
@@ -123,7 +139,7 @@ for j,fullpath in enumerate(['/Users/sargas/Documents/UVIT/A10_071/VCC491_FUV_Ba
 		#plt.ylabel('Declination')
 		print('\tBeginning random background box generation.')
 		#f = open('/Users/sargas/Documents/UVIT/tests/threshold_%d_%.2f.dat' % (exps[j], backthresh), 'w')
-		f = open('/Users/sargas/Documents/UVIT/tests/threshold_%d_%.2f.dat' % (exps[j], backthresh), 'w')
+		f = open(root_folder + "thresholds/" + 'threshold_%d_%.2f.dat' % (exps[j], backthresh), 'w')
 		f.write('#BoxID\tx\ty\tBackground\trms\n')
 		for i in range(len(bigx)):
 			numboxes = 0
@@ -154,6 +170,8 @@ for j,fullpath in enumerate(['/Users/sargas/Documents/UVIT/A10_071/VCC491_FUV_Ba
 		print('\t...box generation complete.')
 		f.close()
 	image.close()
+
+## LATTER PART OF THE SCRIPT
 
 exps = [300, 4000, 7500, 11000, 20000]
 # Read in all the backgrounds from random boxes and make histograms, check skew
